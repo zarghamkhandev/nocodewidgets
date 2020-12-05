@@ -20,6 +20,18 @@ export type Query = {
   __typename?: 'Query';
   me?: Maybe<User>;
   projects?: Maybe<Array<Project>>;
+  project?: Maybe<Project>;
+  votes?: Maybe<VotesData>;
+};
+
+
+export type QueryProjectArgs = {
+  projectId: Scalars['String'];
+};
+
+
+export type QueryVotesArgs = {
+  projectId: Scalars['String'];
 };
 
 export type Mutation = {
@@ -62,6 +74,7 @@ export type MutationCreateProjectArgs = {
   option1: Scalars['String'];
   option2: Scalars['String'];
   widgetName: Scalars['String'];
+  publishUrl: Scalars['String'];
 };
 
 
@@ -116,6 +129,14 @@ export type Project = {
   option1: Scalars['String'];
   option2: Scalars['String'];
   createdAt: Scalars['String'];
+  publishUrl?: Maybe<Scalars['String']>;
+};
+
+export type VotesData = {
+  __typename?: 'VotesData';
+  total: Scalars['Int'];
+  option1: Scalars['Int'];
+  option2: Scalars['Int'];
 };
 
 export enum CacheControlScope {
@@ -135,10 +156,32 @@ export type VoteMutation = (
   & Pick<Mutation, 'vote'>
 );
 
+export type ProjectQueryVariables = Exact<{
+  projectId: Scalars['String'];
+}>;
+
+
+export type ProjectQuery = (
+  { __typename?: 'Query' }
+  & { project?: Maybe<(
+    { __typename?: 'Project' }
+    & Pick<Project, 'text' | 'option1' | 'option2'>
+  )> }
+);
+
 
 export const VoteDocument = gql`
     mutation vote($value: String!, $projectId: String!) {
   vote(value: $value, projectId: $projectId)
+}
+    `;
+export const ProjectDocument = gql`
+    query Project($projectId: String!) {
+  project(projectId: $projectId) {
+    text
+    option1
+    option2
+  }
 }
     `;
 
@@ -150,6 +193,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
   return {
     vote(variables: VoteMutationVariables): Promise<VoteMutation> {
       return withWrapper(() => client.request<VoteMutation>(print(VoteDocument), variables));
+    },
+    Project(variables: ProjectQueryVariables): Promise<ProjectQuery> {
+      return withWrapper(() => client.request<ProjectQuery>(print(ProjectDocument), variables));
     }
   };
 }

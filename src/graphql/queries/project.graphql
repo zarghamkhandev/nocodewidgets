@@ -1,0 +1,7 @@
+query Project($projectId: String!) {
+  project(projectId: $projectId) {
+    text
+    option1
+    option2
+  }
+}
