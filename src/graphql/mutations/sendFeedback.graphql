@@ -1,0 +1,3 @@
+mutation sendFeedback($widgetId: Int!, $value: String!) {
+  sendFeedback(widgetId: $widgetId, value: $value)
+}

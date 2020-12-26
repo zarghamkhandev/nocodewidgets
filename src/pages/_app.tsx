@@ -7,12 +7,8 @@ const App: React.FunctionComponent<AppProps> = (props: AppProps) => {
   return (
     <>
       <Head>
-        <script
-          type="text/javascript"
-          src="http://localhost:3001/zoid.min.js"></script>
-        <script
-          type="text/javascript"
-          src="http://localhost:3001/widget.js"></script>
+        <script type="text/javascript" src={process.env.ZOID_URL}></script>
+        <script type="text/javascript" src={process.env.WIDGET_URL}></script>
       </Head>
       <Component {...pageProps} />
     </>

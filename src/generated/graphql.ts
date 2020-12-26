@@ -2,9 +2,13 @@ import { GraphQLClient } from 'graphql-request';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 export type Maybe<T> = T | null;
-export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type Exact<T extends { [key: string]: unknown }> = {
+  [K in keyof T]: T[K];
+};
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> &
+  { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> &
+  { [SubKey in K]: Maybe<T[SubKey]> };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: string;
@@ -12,6 +16,8 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSON: any;
   /** The `Upload` scalar type represents a file upload. */
   Upload: any;
 };
@@ -19,19 +25,22 @@ export type Scalars = {
 export type Query = {
   __typename?: 'Query';
   me?: Maybe<User>;
+  widgets?: Maybe<Array<Widget>>;
+  widget?: Maybe<Widget>;
   projects?: Maybe<Array<Project>>;
-  project?: Maybe<Project>;
-  votes?: Maybe<VotesData>;
+  project: Project;
 };
 
+export type QueryWidgetsArgs = {
+  projectId: Scalars['Int'];
+};
+
+export type QueryWidgetArgs = {
+  widgetId: Scalars['Int'];
+};
 
 export type QueryProjectArgs = {
-  projectId: Scalars['String'];
-};
-
-
-export type QueryVotesArgs = {
-  projectId: Scalars['String'];
+  projectId: Scalars['Int'];
 };
 
 export type Mutation = {
@@ -41,46 +50,51 @@ export type Mutation = {
   logout: Scalars['Boolean'];
   forgotPassword: Response;
   changePassword: Response;
-  createProject: ProjectResponse;
-  vote: Scalars['Boolean'];
+  createWidget: WidgetResponse;
+  deleteWidget: Scalars['Boolean'];
+  createProject: Project;
+  sendFeedback: Scalars['Boolean'];
 };
-
 
 export type MutationRegisterArgs = {
   options: Options;
 };
-
 
 export type MutationLoginArgs = {
   email: Scalars['String'];
   password: Scalars['String'];
 };
 
-
 export type MutationForgotPasswordArgs = {
   email: Scalars['String'];
 };
-
 
 export type MutationChangePasswordArgs = {
   newPassword: Scalars['String'];
   token: Scalars['String'];
 };
 
-
-export type MutationCreateProjectArgs = {
-  id: Scalars['String'];
-  text: Scalars['String'];
-  option1: Scalars['String'];
-  option2: Scalars['String'];
+export type MutationCreateWidgetArgs = {
   widgetName: Scalars['String'];
-  publishUrl: Scalars['String'];
+  publishRoute: Scalars['String'];
+  position: Scalars['String'];
+  projectId: Scalars['Int'];
+  widgetTypeId: Scalars['Int'];
+  widgetProperties: Array<WidgetPropertyItemInput>;
 };
 
+export type MutationDeleteWidgetArgs = {
+  widgetId: Scalars['Int'];
+};
 
-export type MutationVoteArgs = {
+export type MutationCreateProjectArgs = {
+  projectName: Scalars['String'];
+  website: Scalars['String'];
+};
+
+export type MutationSendFeedbackArgs = {
+  widgetId: Scalars['Int'];
   value: Scalars['String'];
-  projectId: Scalars['String'];
 };
 
 export type Options = {
@@ -114,89 +128,129 @@ export type UserResponse = {
   user?: Maybe<User>;
 };
 
-export type ProjectResponse = {
-  __typename?: 'ProjectResponse';
+export type WidgetResponse = {
+  __typename?: 'WidgetResponse';
   errors?: Maybe<Array<Maybe<Error>>>;
-  project?: Maybe<Project>;
+  widget?: Maybe<Widget>;
+};
+
+export type WidgetPropertyItemInput = {
+  propertyName: Scalars['String'];
+  propertyValue: Scalars['String'];
+};
+
+export type WidgetPropertyItem = {
+  __typename?: 'WidgetPropertyItem';
+  propertyName: Scalars['String'];
+  propertyValue: Scalars['String'];
+};
+
+export type Widget = {
+  __typename?: 'Widget';
+  id: Scalars['Int'];
+  projectId: Scalars['Int'];
+  widgetTypeId: Scalars['Int'];
+  widgetName?: Maybe<Scalars['String']>;
+  createdAt: Scalars['String'];
+  publishRoute?: Maybe<Scalars['String']>;
+  position?: Maybe<Scalars['String']>;
+  feedbackData?: Maybe<FeedbackResponse>;
+  widgetProperties: Array<WidgetPropertyItem>;
+};
+
+export type FeedbackResponse = {
+  __typename?: 'feedbackResponse';
+  type: Scalars['String'];
+  data: Array<FeedbackData>;
+};
+
+export type FeedbackData = {
+  __typename?: 'feedbackData';
+  count: Scalars['Int'];
+  value: Scalars['String'];
 };
 
 export type Project = {
   __typename?: 'Project';
-  id: Scalars['String'];
-  widgetName: Scalars['String'];
-  user?: Maybe<User>;
-  text: Scalars['String'];
-  option1: Scalars['String'];
-  option2: Scalars['String'];
+  id: Scalars['Int'];
+  userId: Scalars['Int'];
+  projectName: Scalars['String'];
   createdAt: Scalars['String'];
-  publishUrl?: Maybe<Scalars['String']>;
-};
-
-export type VotesData = {
-  __typename?: 'VotesData';
-  total: Scalars['Int'];
-  option1: Scalars['Int'];
-  option2: Scalars['Int'];
+  website: Scalars['String'];
 };
 
 export enum CacheControlScope {
   Public = 'PUBLIC',
-  Private = 'PRIVATE'
+  Private = 'PRIVATE',
 }
 
-
-export type VoteMutationVariables = Exact<{
+export type SendFeedbackMutationVariables = Exact<{
+  widgetId: Scalars['Int'];
   value: Scalars['String'];
-  projectId: Scalars['String'];
 }>;
 
+export type SendFeedbackMutation = { __typename?: 'Mutation' } & Pick<
+  Mutation,
+  'sendFeedback'
+>;
 
-export type VoteMutation = (
-  { __typename?: 'Mutation' }
-  & Pick<Mutation, 'vote'>
-);
-
-export type ProjectQueryVariables = Exact<{
-  projectId: Scalars['String'];
+export type WidgetQueryVariables = Exact<{
+  widgetId: Scalars['Int'];
 }>;
 
+export type WidgetQuery = { __typename?: 'Query' } & {
+  widget?: Maybe<
+    { __typename?: 'Widget' } & Pick<Widget, 'id'> & {
+        widgetProperties: Array<
+          { __typename?: 'WidgetPropertyItem' } & Pick<
+            WidgetPropertyItem,
+            'propertyName' | 'propertyValue'
+          >
+        >;
+      }
+  >;
+};
 
-export type ProjectQuery = (
-  { __typename?: 'Query' }
-  & { project?: Maybe<(
-    { __typename?: 'Project' }
-    & Pick<Project, 'text' | 'option1' | 'option2'>
-  )> }
-);
-
-
-export const VoteDocument = gql`
-    mutation vote($value: String!, $projectId: String!) {
-  vote(value: $value, projectId: $projectId)
-}
-    `;
-export const ProjectDocument = gql`
-    query Project($projectId: String!) {
-  project(projectId: $projectId) {
-    text
-    option1
-    option2
+export const SendFeedbackDocument = gql`
+  mutation sendFeedback($widgetId: Int!, $value: String!) {
+    sendFeedback(widgetId: $widgetId, value: $value)
   }
-}
-    `;
+`;
+export const WidgetDocument = gql`
+  query Widget($widgetId: Int!) {
+    widget(widgetId: $widgetId) {
+      id
+      widgetProperties {
+        propertyName
+        propertyValue
+      }
+    }
+  }
+`;
 
 export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
 
-
-const defaultWrapper: SdkFunctionWrapper = sdkFunction => sdkFunction();
-export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
+const defaultWrapper: SdkFunctionWrapper = (sdkFunction) => sdkFunction();
+export function getSdk(
+  client: GraphQLClient,
+  withWrapper: SdkFunctionWrapper = defaultWrapper
+) {
   return {
-    vote(variables: VoteMutationVariables): Promise<VoteMutation> {
-      return withWrapper(() => client.request<VoteMutation>(print(VoteDocument), variables));
+    sendFeedback(
+      variables: SendFeedbackMutationVariables
+    ): Promise<SendFeedbackMutation> {
+      return withWrapper(() =>
+        client.request<SendFeedbackMutation>(
+          print(SendFeedbackDocument),
+          variables
+        )
+      );
     },
-    Project(variables: ProjectQueryVariables): Promise<ProjectQuery> {
-      return withWrapper(() => client.request<ProjectQuery>(print(ProjectDocument), variables));
-    }
+    Widget(variables: WidgetQueryVariables): Promise<WidgetQuery> {
+      return withWrapper(() =>
+        client.request<WidgetQuery>(print(WidgetDocument), variables)
+      );
+    },
   };
 }
 export type Sdk = ReturnType<typeof getSdk>;

@@ -3,14 +3,14 @@ import { GraphQLClient } from 'graphql-request';
 import React, { useEffect, useState } from 'react';
 import {
   getSdk,
-  ProjectQueryVariables,
-  VoteMutationVariables,
+  MutationSendFeedbackArgs,
+  WidgetQueryVariables,
 } from '../generated/graphql';
-
+import { find } from 'lodash';
 interface CardProps {}
 
 const Card: React.FunctionComponent<CardProps> = ({}) => {
-  const [projectId, setProjectId] = useState('');
+  const [widgetId, setWidgetId] = useState<number>(0);
   const [votingDone, setVotingDone] = useState(false);
   const [data, setData] = useState({ text: '', option1: '', option2: '' });
   const [initialRender, setInitialRender] = useState(false);
@@ -18,51 +18,62 @@ const Card: React.FunctionComponent<CardProps> = ({}) => {
   const client = new GraphQLClient(process.env.NEXT_PUBLIC_API_URL || '');
   const sdk = getSdk(client);
 
-  async function vote(variables: VoteMutationVariables) {
-    const { vote } = await sdk.vote(variables);
-    if (vote) {
+  async function sendFeedback(variables: MutationSendFeedbackArgs) {
+    const { sendFeedback } = await sdk.sendFeedback(variables);
+    if (sendFeedback) {
       setVotingDone(true);
     }
 
     await delay(3000);
     (window as any).xprops.closeWidget();
   }
-  async function getProject(variables: ProjectQueryVariables) {
-    const { project } = await sdk.Project(variables);
-    if (!project) {
-      throw new Error('invalid project ');
+  async function getWidget(variables: WidgetQueryVariables) {
+    const { widget } = await sdk.Widget(variables);
+    if (!widget) {
+      throw new Error('invalid widget ');
     }
-    const { option1, text, option2 } = project;
-    setData({ option1, option2, text });
+    const { widgetProperties } = widget;
+    const text = find(widgetProperties, { propertyName: 'title' })
+      ?.propertyValue;
+    const option1 = find(widgetProperties, { propertyName: 'option1' })
+      ?.propertyValue;
+    const option2 = find(widgetProperties, { propertyName: 'option2' })
+      ?.propertyValue;
+
+    if (!text || !option1 || !option2) {
+      return;
+    } else {
+      setData({ option1, option2, text });
+    }
   }
 
   useEffect(() => {
     if (window && !initialRender) {
-      setProjectId((window as any).xprops.pid);
+      setWidgetId((window as any).xprops.widgetId);
     }
     setInitialRender(true);
   }, [initialRender]);
   useEffect(() => {
     if (initialRender) {
-      getProject({ projectId });
+      getWidget({ widgetId });
     }
-  }, [projectId]);
+  }, [widgetId]);
 
   const mainContent = (
     <>
       <div className="w-3/5 text-gray-700 ">{data.text}</div>
       <div className="flex ">
         <button
-          className="bg-green-500 mx-1 px-8 py-1 rounded-xl text-gray-200 focus:outline-none focus:bg-green-700"
+          className="px-8 py-1 mx-1 text-gray-200 bg-green-500 rounded-xl focus:outline-none focus:bg-green-700"
           onClick={() => {
-            vote({ value: data.option1, projectId: projectId });
+            sendFeedback({ value: data.option1, widgetId: widgetId });
           }}>
           {data.option1}
         </button>
         <button
-          className="bg-red-500 mx-1 px-8 py-1 rounded-xl text-gray-200 focus:outline-none focus:bg-red-700"
+          className="px-8 py-1 mx-1 text-gray-200 bg-red-500 rounded-xl focus:outline-none focus:bg-red-700"
           onClick={() => {
-            vote({ value: data.option2, projectId: projectId });
+            sendFeedback({ value: data.option2, widgetId: widgetId });
           }}>
           {data.option2}
         </button>
@@ -70,9 +81,9 @@ const Card: React.FunctionComponent<CardProps> = ({}) => {
     </>
   );
   return (
-    <div className="flex py-3 px-4 w-full text-lg bg-gray-100 h-16 items-center">
+    <div className="flex items-center w-full h-16 px-4 py-3 text-lg bg-gray-100">
       {votingDone ? (
-        <div className="w-full text-gray-700 flex justify-center">
+        <div className="flex justify-center w-full text-gray-700">
           Thank you for your feedback!
         </div>
       ) : (

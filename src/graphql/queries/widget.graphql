@@ -1,0 +1,9 @@
+query Widget($widgetId: Int!) {
+  widget(widgetId: $widgetId) {
+    id
+    widgetProperties {
+      propertyName
+      propertyValue
+    }
+  }
+}
